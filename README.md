@@ -1,59 +1,42 @@
 # etcd-backup
 
-etcd-backup is a simple, efficient and lightweight command line utility to backup and restore [etcd](https://github.com/coreos/etcd) keys.
+etcd-backup is a simple, efficient and lightweight command line utility to backup and restore [etcd](https://github.com/coreos/etcd) keys, from a containerised etcd, accessed by docker link.
 
 ## Dependencies
 
-etcd-backup has only one dependency: go-etcd [the golang offical library for ETCD](https://github.com/coreos/go-etcd)
+etcd-backup dependencies are automatically obtained during the container build process.
 
 ## Installation
 
   Installation composed of 3 steps:
 
-* [Install go](http://golang.org/doc/install/source)
-* Download the project `git clone git@github.com:fanhattan/etcd-backup.git`
-* Download the dependency `go get github.com/coreos/go-etcd/etcd`
-* Build the binary `cd etcd-backup` and then  `go install`
+* Install Go
+  * GVM is an easy way..
+  * `bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)`
+  * `gvm install go1.4`
+  * `gvm use go1.4`
+  * `gvm install go1.6`
+  * `gvm use go1.6`
+* Download the project `git clone git@github.com:gameontext/etcd-backup.git`
+  * Use `build.sh` to build the container gameon/etcdbackup
+
+
+(If we get the built docker image into a repo, this could all be a lot faster...)
 
 ## Dumping
 
 ### Usage
 
-    $ etcd-dump dump
+    $ docker run -v $(pwd):/backup -link etcd gameon/etcdbackup dump
 
-This is the easiest way to dump the whole `etcd` keyspace. Results will be stored in a json file `etcd-dump.json`
+This will dump the whole `etcd` keyspace. Results will be stored in a json file `dump.json`
 in the directory where you executed the command.
 
+If your etcd container is not called `etcd` then use `-link myetcdcontainername:etcd` instead of `-link etcd`
+
 The default Backup strategy for dumping is to dump all keys and preserve the order : `keys:["/"], recursive:true, sorted:true`
-The backup strategy can be overwritten in the etcd-backup configuration file. See _fixtures/backup-configuration.json_
-
-### Command line options and default values
-
-  `-config` Mandatory etcd-backup configuration file location, default value: "_backup-configuration.json_". See [Configuration section](#config) for more information.<br/>
-  `-retries` Number of retries that will be executed if the request fails, default value is 5.<br/>
-  `-etcd-config` etcd client configuration file location, default value: "_etcd-configuration.json_". See fixtures folder for an example. <br/>
-  `-file` Location of the dump file data will be stored in, default value: "_etcd-dump.json_".<br/>
-
-
-    $ etcd-dump -config=myBackupConfig.json -retries=2 -etcd-config=myClusterConfig.json -file=result.json dump
-
-### <a name="config"/>Configuration
-
-The `dump.keys` supports different configurations:
-
-  {
-    "key": "/",
-    "recursive": true
-  }
-
-Recursively dump all the keys inside `/`.
-
-  {
-    "key": "/myKey"
-  }
-
-Dump only the key `/myKey`.
-
+The backup strategy can be overwritten in the etcd-backup configuration file. See _fixtures/backup-configuration.json_ If you alter
+this file, you will need to rebuild the container using `build.sh`.
 
 ### Dump File structure
 
@@ -65,12 +48,12 @@ Dumped keys are stored in an array of keys, the key path is the absolute path. B
 
 ### Usage
 
-    $ etcd-dump restore
+    $ docker run -v $(pwd):/backup -link etcd gameon/etcdbackup restore
 
-Restore the keys from the `etcd-dump.json` file.
+Restore the keys from the `dump.json` file.
 
-Restore now supports Strategy, you can restore some part of the dumpfile or the entire dump if you want to.
-
+Restore supports Strategy, you can restore some part of the dumpfile or the entire dump if you want to. (Note that because the config is inside the docker image, you'll need to rebuild the container via `build.sh` if you want to do this)
+```
   {
     "backupStrategy":
     {
@@ -78,9 +61,9 @@ Restore now supports Strategy, you can restore some part of the dumpfile or the 
       "recursive": true
     }
   }
-
+```
 Will Recursively restore all the keys inside `/`.
-
+```
   {
     "backupStrategy":
     {
@@ -88,16 +71,5 @@ Will Recursively restore all the keys inside `/`.
       "recursive": true
     }
   }
-
+```
 Will only restore the keys under `/myKey`.
-
-### Command line options and default values
-
-  `-config` Mandatory etcd-backup configuration file location, default value: "_backup-configuration.json_". See [Configuration section](#config) for more information.<br/>
-  `-concurrent-requests` Number of concurrent requests that will be executed during the restore (restore mode only), default value is 10.<br/>
-  `-retries` Number of retries that will be executed if the request fails, default value is 5.<br/>
-  `-etcd-config` etcd client configuration file location, default value: "_etcd-configuration.json_". See fixtures folder for an example. <br/>
-  `-file` Location of the dump file data will be loaded from, default value: "_etcd-dump.json_".<br/>
-
-    $ etcd-dump -config=myBackupConfig.json -retries=2 -etcd-config=myClusterConfig.json -file=dataset.json -concurrent-requests=100 restore
-
