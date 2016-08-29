@@ -29,7 +29,7 @@ etcd-backup dependencies are automatically obtained during the container build p
 
     $ docker run -v $(pwd):/backup -link etcd gameon/etcdbackup dump
 
-This will dump the whole `etcd` keyspace. Results will be stored in a json file `dump.json`
+This will dump the whole `etcd` keyspace. Results will be stored in a yaml file `dump.yaml`
 in the directory where you executed the command.
 
 If your etcd container is not called `etcd` then use `-link myetcdcontainername:etcd` instead of `-link etcd`
@@ -42,7 +42,13 @@ this file, you will need to rebuild the container using `build.sh`.
 
 Dumped keys are stored in an array of keys, the key path is the absolute path. By design non-empty directories are not saved in the dump file, and empty directories do not contain the `value` key:
 
-    [{ "key": "/myKey", "value": "value1" },{ "key": "/dir/mydir/myKey", "value": "test" }, {"key": "/dir/emptyDir"}]
+```
+- key: /myKey
+  value: value1
+- key: /dir/mydir/myKey
+  value: test
+- key: /dir/emptyDir
+```  
 
 ## Restoring
 
@@ -50,7 +56,7 @@ Dumped keys are stored in an array of keys, the key path is the absolute path. B
 
     $ docker run -v $(pwd):/backup -link etcd gameon/etcdbackup restore
 
-Restore the keys from the `dump.json` file.
+Restore the keys from the `dump.yaml` file.
 
 Restore supports Strategy, you can restore some part of the dumpfile or the entire dump if you want to. (Note that because the config is inside the docker image, you'll need to rebuild the container via `build.sh` if you want to do this)
 ```

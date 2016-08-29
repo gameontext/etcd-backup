@@ -1,7 +1,7 @@
 {
   "concurrentRequests": 50,
   "retries": 5,
-  "dumpFilePath": "/backup/dump.json",
+  "dumpFilePath": "/backup/dump.yaml",
   "backupStrategy": {
     "keys": ["/"],
     "sorted": true,

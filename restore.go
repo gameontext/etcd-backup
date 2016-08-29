@@ -8,7 +8,9 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
+  "strings"
+  "gopkg.in/yaml.v2"
+  "io/ioutil"
 	"github.com/coreos/go-etcd/etcd"
 )
 
@@ -18,14 +20,26 @@ func LoadDataSet(dumpFilePath string) *[]BackupKey {
 	if error != nil {
 		config.LogFatal("Error when trying to open the file `"+dumpFilePath+"`. Error: ", error)
 	}
+  dataSet := &[]BackupKey{}
+  if strings.HasSuffix(dumpFilePath,".yaml") {
+    config.LogPrintln("Using Yaml Config");
+    source, err := ioutil.ReadFile(dumpFilePath)
+  	if err != nil {
+  		panic(err)
+  	}
 
-	jsonDataSet := &[]BackupKey{}
-	jsonParser := json.NewDecoder(file)
-	if err := jsonParser.Decode(jsonDataSet); err != nil {
-		config.LogFatal("Error when trying to load data set into json. Error: ", err)
-	}
+    err = yaml.Unmarshal(source, &dataSet)
+    if err != nil {
+        panic(err)
+    }
+  }else{
+  	jsonParser := json.NewDecoder(file)
+  	if err := jsonParser.Decode(dataSet); err != nil {
+  		config.LogFatal("Error when trying to load data set into json. Error: ", err)
+  	}
+  }
 
-	return jsonDataSet
+	return dataSet
 }
 
 func RestoreDataSet(backupKeys []BackupKey, config *Config, etcdClient EtcdClient) {

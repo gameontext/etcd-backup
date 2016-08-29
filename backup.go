@@ -6,15 +6,15 @@ import (
 	"os"
 	"strings"
 	"time"
-
 	"github.com/coreos/go-etcd/etcd"
+  "gopkg.in/yaml.v2"
 )
 
 type BackupKey struct {
-	Key        string     `json:"key"`
-	Value      *string    `json:"value,omitempty"`
-	Expiration *time.Time `json:"expiration,omitempty"`
-	TTL        int64      `json:"ttl,omitempty"`
+	Key        string     `yaml:"key" json:"key"`
+	Value      *string    `yaml:"value,omitempty" json:"value,omitempty"`
+	Expiration *time.Time `yaml:"expiration,omitempty" json:"expiration,omitempty"`
+	TTL        int64      `yaml:"ttl,omitempty" json:"ttl,omitempty"`
 }
 
 type EtcdClient interface {
@@ -109,11 +109,21 @@ func NodesToBackupKeys(node *etcd.Node) []*BackupKey {
 	return backupKeys
 }
 
-func DumpDataSet(dataSet []*BackupKey, dumpFilePath string) {
-	jsonDataSet, err := json.Marshal(dataSet)
-	if err != nil {
-		config.LogFatal("Error when trying to encode data set into json. Error: ", err)
-	}
+func DumpDataSet(dataSetToBackup []*BackupKey, dumpFilePath string) {
+  var dataSet []byte
+  var err error
+  if strings.HasSuffix(dumpFilePath,".yaml") {
+    config.LogPrintln("Using Yaml Config")
+    dataSet, err = yaml.Marshal(dataSetToBackup)
+    if err != nil {
+      config.LogFatal("Error when trying to encode data set into yaml. Error: ", err)
+    }
+  }else{
+    dataSet, err = json.Marshal(dataSetToBackup)
+  	if err != nil {
+  		config.LogFatal("Error when trying to encode data set into json. Error: ", err)
+  	}
+  }
 
 	file, error := os.OpenFile(dumpFilePath, os.O_WRONLY|os.O_CREATE, 0666)
 	defer file.Close()
@@ -121,7 +131,7 @@ func DumpDataSet(dataSet []*BackupKey, dumpFilePath string) {
 		config.LogFatal("Error when trying to open the file `"+dumpFilePath+"`. Error: ", error)
 	}
 
-	_, err = file.Write(jsonDataSet)
+	_, error = file.Write(dataSet)
 	if error != nil {
 		config.LogFatal("Error when writing dump file to disk the file `"+dumpFilePath+"`. Error: ", error)
 	}
