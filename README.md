@@ -27,12 +27,14 @@ etcd-backup dependencies are automatically obtained during the container build p
 
 ### Usage
 
-    $ docker run -v $(pwd):/backup -link etcd gameon/etcdbackup dump
+    $ docker run -v $(pwd):/backup --link etcd gameon/etcdbackup dump
 
 This will dump the whole `etcd` keyspace. Results will be stored in a yaml file `dump.yaml`
 in the directory where you executed the command.
 
-If your etcd container is not called `etcd` then use `-link myetcdcontainername:etcd` instead of `-link etcd`
+If your etcd container is not called `etcd` then use `--link myetcdcontainername:etcd` instead of `--link etcd`
+
+If your etcd container is not in the default docker network, you'll also need to add the appropriate `--network mynetworkname` argument.
 
 The default Backup strategy for dumping is to dump all keys and preserve the order : `keys:["/"], recursive:true, sorted:true`
 The backup strategy can be overwritten in the etcd-backup configuration file. See _fixtures/backup-configuration.json_ If you alter
@@ -54,7 +56,7 @@ Dumped keys are stored in an array of keys, the key path is the absolute path. B
 
 ### Usage
 
-    $ docker run -v $(pwd):/backup -link etcd gameon/etcdbackup restore
+    $ docker run -v $(pwd):/backup --link etcd gameon/etcdbackup restore
 
 Restore the keys from the `dump.yaml` file.
 
